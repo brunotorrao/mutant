@@ -22,7 +22,7 @@ public class MutantService {
     
     public Mono<Boolean> isMutant(List<String> dna) {
         return Flux.fromIterable(dna)
-            .mergeWith(getColums(dna))
+            .mergeWith(getColumns(dna))
             .mergeWith(getDiagonals(dna))
             .filter(this::hasFourEqualLettersInSequence)
             .collectList()
@@ -37,7 +37,7 @@ public class MutantService {
         return matches.size() >= 2 ? TRUE : FALSE;
     }
     
-    private Flux<String> getColums(List<String> dna) {
+    private Flux<String> getColumns(List<String> dna) {
         return Flux.range(0, dna.size())
             .flatMap(x -> getColumn(x, dna));
     }
