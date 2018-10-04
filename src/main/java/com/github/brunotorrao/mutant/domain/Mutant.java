@@ -9,16 +9,25 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
+import static java.lang.String.join;
+
 @Data
-@Document
+@Document(collection = "mutants")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Mutant {
     
     @Id
-    private String id;
+    private Integer id;
     private List<String> dna;
-    private Integer calls;
-    private boolean isMutant;
+    private Boolean mutant;
+    
+    public Boolean isMutant() {
+        return mutant;
+    }
+    
+    public void fillId() {
+        this.id = join("", this.dna).hashCode();
+    }
 }

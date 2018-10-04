@@ -1,5 +1,7 @@
 package com.github.brunotorrao.mutant.service;
 
+import com.github.brunotorrao.mutant.domain.Mutant;
+import com.github.brunotorrao.mutant.repository.MutantRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,14 +15,42 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.join;
 import static java.util.regex.Pattern.compile;
+import static reactor.core.scheduler.Schedulers.elastic;
 
 @Service
 public class MutantService {
     
     private static final Pattern PATTERN = compile("(\\w)\\1{3}");
     
+    private MutantRepository repository;
     
-    public Mono<Boolean> isMutant(List<String> dna) {
+    public MutantService(MutantRepository repository) {
+        this.repository = repository;
+    }
+    
+    public Mono<Mutant> findOrCreate(Mutant mutant) {
+        return findByDna(mutant.getDna())
+            .switchIfEmpty(Mono.just(mutant))
+            .flatMap(this::identifyMutant)
+            .doOnNext(Mutant::fillId)
+            .flatMap(repository::save);
+    }
+    
+    private Mono<Mutant> identifyMutant(Mutant mutant) {
+        if (mutant.isMutant() == null) {
+            return isMutant(mutant.getDna())
+                .map(isMutant -> {
+                    mutant.setMutant(isMutant);
+                    return mutant;
+                });
+        } else return Mono.just(mutant);
+    }
+    
+    private Mono<Mutant> findByDna(List<String> dna) {
+        return repository.findById(join("", dna).hashCode());
+    }
+    
+     Mono<Boolean> isMutant(List<String> dna) {
         return Flux.fromIterable(dna)
             .mergeWith(getColumns(dna))
             .mergeWith(getDiagonals(dna))
@@ -39,7 +69,10 @@ public class MutantService {
     
     private Flux<String> getColumns(List<String> dna) {
         return Flux.range(0, dna.size())
-            .flatMap(x -> getColumn(x, dna));
+            .parallel()
+            .runOn(elastic())
+            .flatMap(x -> getColumn(x, dna))
+            .sequential();
     }
     
     private Mono<String> getColumn(Integer columnIndex, List<String> dna) {
@@ -50,11 +83,19 @@ public class MutantService {
     }
     
     private Flux<String> getDiagonals(List<String> dna) {
-        var rightDiagonal = Flux.range(0-dna.size(), (dna.size()*2)-1)
-            .flatMap(x -> getDiagonal(x, dna, this::getCellAndIncrement));
+        var loopRange = (dna.size()*2)-1;
         
-        var leftDiagonal = Flux.range(0, (dna.size()*2)-1)
-            .flatMap(x -> getDiagonal(x, dna, this::getCellAndDecrement));
+        var rightDiagonal = Flux.range(0-dna.size(), loopRange)
+            .parallel(loopRange)
+            .runOn(elastic())
+            .flatMap(x -> getDiagonal(x, dna, this::getCellAndIncrement))
+            .sequential();
+        
+        var leftDiagonal = Flux.range(0, loopRange)
+            .parallel(loopRange)
+            .runOn(elastic())
+            .flatMap(x -> getDiagonal(x, dna, this::getCellAndDecrement))
+            .sequential();
         
         return rightDiagonal.mergeWith(leftDiagonal);
     }

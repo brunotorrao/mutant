@@ -22,8 +22,8 @@ public class MutantHandler {
     
     public Mono<ServerResponse> isMutant(ServerRequest request) {
         return request.bodyToMono(Mutant.class)
-            .map(Mutant::getDna)
-            .flatMap(service::isMutant)
+            .flatMap(service::findOrCreate)
+            .map(Mutant::isMutant)
             .flatMap(isMutant -> {
                 if (isMutant) {
                     return ok().build();

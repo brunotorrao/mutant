@@ -14,7 +14,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class MutantRouter {
     
     @Bean
-    RouterFunction routerFunction(MutantHandler mutantHandler) {
+    public RouterFunction mutantRouterFunctions(MutantHandler mutantHandler) {
         return route(POST("/mutant").and(accept(APPLICATION_JSON)), mutantHandler::isMutant);
     }
 }
