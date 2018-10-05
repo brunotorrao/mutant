@@ -30,10 +30,10 @@ public class MutantFixture {
         return Mutant
             .builder()
             .dna(List.of(
-                "ALKJIH",
-                "BLJEHG",
-                "CJAZXV",
-                "JQBAVU",
+                "ALUJIH",
+                "BLLUHG",
+                "CJALUV",
+                "JQBALU",
                 "EPOVML",
                 "FGVIJK"))
             .build();
