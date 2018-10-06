@@ -1,0 +1,63 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+  name: fast
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mutant-mongo
+spec:
+  selector:
+    app: mutant-mongo
+    role: backend
+  ports:
+  - port: 27017
+    targetPort: 27017
+  clusterIP: None
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: mutant-mongo
+spec:
+  serviceName: "mutant-mongo"
+  replicas: 1
+  template:
+    metadata:
+      name: backend
+      labels:
+        app: mutant-mongo
+        role: backend
+        env: production
+    spec:
+      containers:
+      - name: mongo
+        image: mongo
+        command:
+        - "mongod"
+        - "--port"
+        - "27017"
+        - "--bind_ip"
+        - "0.0.0.0"
+        - "--dbpath"
+        - "/data/db"
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-persistent-storage
+          mountPath: /data/db
+      terminationGracePeriodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-persistent-storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "fast"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi

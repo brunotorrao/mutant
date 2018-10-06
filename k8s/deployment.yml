@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mutant
+spec:
+  replicas: 2
+  template:
+    metadata:
+      name: backend
+      labels:
+        app: mutant
+        role: backend
+        env: production
+    spec:
+      containers:
+      - name: mutant
+        image: gcr.io/teste-218512/mutant
+        imagePullPolicy: Always
+        ports:
+        - name: backend
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /actuator/health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 2
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /actuator/health
+            port: 8080
+          periodSeconds: 60
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
