@@ -1,0 +1,21 @@
+version: '3.1'
+
+services:
+  mutant:
+    build: .
+    restart: always
+    container_name: mutant-container
+    ports:
+    - 8080:8080
+    working_dir: /
+    depends_on:
+    - mutant-mongo
+
+  mutant-mongo:
+    image: mongo
+    container_name: mutant-mongo
+    hostname: mutant-mongo
+    volumes:
+    - $HOME/data/mutant-mongo-data:/data/db
+    - $HOME/data/mutant-mongo-bkp:/data/bkp
+    restart: always
