@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Stats {
     @JsonProperty("count_mutant_dna")
-    private Integer countMutantDna;
+    private Integer countMutantDna = 0;
     @JsonProperty("count_human_dna")
-    private Integer countHumanDna;
-    private Double ratio;
+    private Integer countHumanDna = 0;
+    private Double ratio = 0.0;
 }
