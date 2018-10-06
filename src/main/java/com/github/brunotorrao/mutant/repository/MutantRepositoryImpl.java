@@ -34,11 +34,15 @@ public class MutantRepositoryImpl implements MutantCustomRepository {
             group("$aux")
                 .sum("countHumanDna").as("countHumanDna")
                 .sum("countMutantDna").as("countMutantDna"),
-            project("countHumanDna", "countMutantDna")
-                .and("countMutantDna").divide("countHumanDna").as("ratio")
+            project("countMutantDna", "countHumanDna")
+                .and("countMutantDna")
+                .divide(when(where("countHumanDna").is(0)).then(1).otherwiseValueOf("countHumanDna"))
+                .as("ratio")
+                
         );
     
         return mongoTemplate.aggregate(aggregation, "mutants", Stats.class)
+            .defaultIfEmpty(new Stats())
             .collectList()
             .map(x -> x.get(0));
     }
